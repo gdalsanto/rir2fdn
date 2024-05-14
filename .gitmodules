@@ -1,3 +1,6 @@
 [submodule "informed/diff-fdn-colorless"]
 	path = informed/diff-fdn-colorless
 	url = git@github.com:gdalsanto/diff-fdn-colorless.git
+[submodule "informed/Two_stage_filter"]
+	path = informed/Two_stage_filter
+	url = git@github.com:gdalsanto/Two_stage_filter.git
