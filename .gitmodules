@@ -1,0 +1,3 @@
+[submodule "informed/diff-fdn-colorless"]
+	path = informed/diff-fdn-colorless
+	url = git@github.com:gdalsanto/diff-fdn-colorless.git
