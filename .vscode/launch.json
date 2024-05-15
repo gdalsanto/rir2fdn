@@ -1,0 +1,23 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python Debugger: Current File",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "args": [
+                "--dir_path",
+                "/Users/dalsag1/Dropbox (Aalto)/aalto/projects/analysis-synthesis-of-RIR/git/rir2fdn/rirs",
+                "--out_dir_path",
+                "/Users/dalsag1/Dropbox (Aalto)/aalto/projects/analysis-synthesis-of-RIR/git/rir2fdn/rirs/edc-params",
+                "--octave_bands",
+                "3"
+            ]
+        }
+    ]
+}
