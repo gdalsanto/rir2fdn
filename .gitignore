@@ -1,4 +1,7 @@
-
+__pycache__/
+.DS_Store
+*.asv 
+/output
 informed/.DS_Store
 .DS_Store
 .vscode/launch.json
