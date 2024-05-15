@@ -1,0 +1,15 @@
+__pycache__/
+.DS_Store
+*.asv 
+/output
+config_*.py
+/dump
+/data
+/runs
+/mushra
+.vscode
+launch.json
+.vscode/launch.json
+*.pyc
+*.json
+inference_tests.m
