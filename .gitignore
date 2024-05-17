@@ -5,3 +5,4 @@ __pycache__/
 informed/.DS_Store
 .DS_Store
 .vscode/launch.json
+*.json
