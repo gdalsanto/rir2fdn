@@ -1,164 +1,131 @@
 % Differentiable FDN for Colorless Reverberation 
-% demo code 
+%
+% Gloria Dal Santo, last modified on 17.05.2024, Espoo (FI)
 
 clear; clc; close all;
+
+%% PREPARE FILEPATHS 
+
 disp('Adding toolboxes to the path ...')
 addpath(genpath('./informed/diff-fdn-colorless/fdnToolbox'))
 addpath(genpath('./informed/diff-fdn-colorless/DecayFitNet'))
-addpath(genpath('./informed/diff-fdn-colorless/Two_stage_filter'))
+addpath(genpath('./informed/Two_stage_filter'))
 disp('ok!')
 
-results_dir = "./informed/diff-fdn-colorless/output/20240301-170355-ok";    % directory containing the solver's output 
-output_dir = fullfile(results_dir, 'matlab');
-rng(109378) 
-
-RIRfilename = [
-    "h229_Office_Lobby_1txts_48000",...
-    "h025_Diningroom_8txts_48000",...
-    "h042_Hallway_ElementarySchool_4txts_48000",...
-    "h110_Office_MeetingRoom_1txts_48000",...
-    "h027_Classroom_8txts_48000",...
-    "h163_Bathroom_1txts_48000",...
-    "h001_Bedroom_65txts_48000"];
-
-iRIR = 4;  % TODO: 
-%% Get attenuation and tone control filters 
-computeAdl = 0;
-
-Adl = 0;    % delay line lenghts in the feedback matrix 
-if isfile(fullfile(results_dir, 'scat_parameters.mat'))
-    types = {'SCAT','VANILLA'};
-    if ~isfile(fullfile(results_dir, 'synthesis_filters.mat'))
-        % in case you need to compute the filter coefficents save the
-        % feedback matrix size  
-        load(fullfile(results_dir, 'scat_parameters.mat'), 'feedbackMatrix')
-        Adl = size(feedbackMatrix, 3);       
-    end
-else
-    types = {'DFDN','RO'};
-end
-
-delays = [593.0, 743.0, 929.0, 1153.0, 1399.0, 1699.0];
-N = length(delays);
-fs = 48000; 
-rir =  audioread("/Users/dalsag1/Dropbox (Aalto)/aalto/projects/analysis-synthesis-of-RIR/git/rir-analysis-synthesis/rirs/MIT_IR_Survey_resample/" + RIRfilename(iRIR)+".wav");
-
-irLen = length(rir);
-
-filterMethods = {'matlabGEQ', 'pythonGEQ', 'TwoStage'};
-edc_est_path = "/Users/dalsag1/Dropbox (Aalto)/aalto/projects/analysis-synthesis-of-RIR/git/rir-analysis-synthesis/rirs/MIT_IR_Survey_resample/" + RIRfilename(iRIR) + "_est.mat";
-% filters_path = "/Users/dalsag1/Dropbox (Aalto)/aalto/projects/analysis-synthesis-of-RIR/git/rir-analysis-synthesis/informed/output/20240221-111550/synthesis_filters.mat"
-octaveBand = 3; 
-[attenuationSOS, equalizationSOS] = get_filters(filterMethods{3}, delays+Adl, octaveBand, fs, irLen, edc_est_path=edc_est_path );%  filters_path = filters_path);
-zAbsorption = zSOS(attenuationSOS,'isDiagonal',true);
-
-%% construct FDN
-
+% initializing filepaths
+results_dir = "./output/20240521-092940";    % directory containing the solver's output 
+output_dir = fullfile(results_dir, 'inference-matlab');   % output directory 
 if ~exist(output_dir, 'dir')
+    % create output directory
     mkdir(output_dir)
 end 
-for typeCell = types
-    type = typeCell{1};
+rirs_dir = './rirs';    % directory containing rirs to synthesize 
+edc_est_dir = './rirs/edc-params';   % directory containing EDC analysis results for the rirs to synthesize 
+[RIRfilepaths, RIRfilenames]  = getFilepaths(rirs_dir, 'wav');   % filepaths of rirs to synthesize
+
+
+%% VARIABLES INIT
+
+% detect whether it uses a scattering feedback matrix 
+if isfile(fullfile(results_dir, 'scat_parameters.mat'))
+    type = 'SCAT';
+else
+    type = 'DFDN';
+end
+
+fs = 48000;     % sampling frequnecy
+octaveBand = 3; % frequnecy resolution of the filters 
+isTranspose = 1;     % relative position of the feedback matrix and delays (0/1)
+%% BUILD FDNs AND SAVE RIRS
+
+for iRIR = 1:length(RIRfilepaths)
+    RIRfilename = char(RIRfilenames(iRIR));
+    % read EDC estimations (ideally I would compute them here, but
+    % DecayFitNet dependencies don't support M2 chip
+    edc_est_path = fullfile(edc_est_dir, RIRfilename(1:end-4) + "_est.mat");
+    % read RIR
+    rir = audioread(RIRfilepaths(iRIR));
+    irLen = length(rir);    
+
     switch type
         case 'DFDN' 
             % load parameters
             load(fullfile(results_dir,'parameters.mat'))
-            temp = B; clear B
-            B.(type) = temp(:);        % input gains as column
-            temp = C; clear C
-            C.(type) = temp;
-            D.(type) = zeros(1:1);     % direct gains
+            B = B(:);           % input gains as column
+            D = zeros(1:1);     % direct gains
             % make matrix A orthogonal 
-            temp = A; clear A
-            A.(type) = double(expm(skew(temp)));
-            C.(type) = zSOS(permute(equalizationSOS,[3 4 1 2]) .*  C.(type));
-            ir.(type) = dss2impz(...
-                irLen, delays, A.(type), B.(type), C.(type), D.(type), 'absorptionFilters', zAbsorption);
-        case 'RO'
-            % ugly quick fix
-            tempB = B; tempC = C; tempD = D; tempA = A; 
-            load(fullfile(results_dir,'parameters_init.mat'))
-            % make matrix A orthogonal 
-            temp = A; clear A
-            Ainit = double(expm(skew(temp)));  
-            temp = B; clear B 
-            B = tempB; 
-            B.(type) = temp';
-            temp = C; clear C
-            C = tempC; 
-            C.(type) = temp;
-            D = tempD; 
-            D.(type) = zeros(1,1);
-            A = tempA;
-            A.(type) = Ainit; 
-            C.(type) = zSOS(permute(equalizationSOS,[3 4 1 2]) .*  C.(type));
-            ir.(type) = dss2impz(...
-                irLen, delays, A.(type), B.(type), C.(type), D.(type), 'absorptionFilters', zAbsorption);
-        case 'SCAT'
-            tempDelays = delays;
-            load(fullfile(results_dir, 'scat_parameters.mat'))
-            Adl = size(feedbackMatrix, 3);
-            delayLeft = double(delayLeft);
-            delayRight = double(delayRight);
-            inputGain = inputGain(:);
-            outputGain = outputGain(:)';
-            outputGain = zSOS(permute(equalizationSOS,[3 4 1 2]) .*  outputGain);
-%             if computeAdl
-%                 zAbsorptionSCAT = zSOS(absorptionGEQ(double(targetT60), double(delays+Adl/2), fs),'isDiagonal',true);
-%             else
-%                 zAbsorptionSCAT = zAbsorption;
-%             end
-            zAbsorptionSCAT = zAbsorption;
-            feedbackMatrix = shiftMatrix(double(feedbackMatrix), delayLeft, 'left');
-            feedbackMatrix = shiftMatrix(feedbackMatrix, delayRight, 'right');
-            mainDelay = double(delays - delayLeft - delayRight);
-            matrixFilter = zFIR(double(feedbackMatrix));
-            ir.(type) = dss2impzTransposed(irLen, mainDelay, matrixFilter, inputGain, outputGain, zeros(1,1), 'absorptionFilters', zAbsorptionSCAT);
-            delays = tempDelays;
-        case 'VANILLA' 
-            K = 4;
-            pulseSize = 1;
-            load(fullfile(results_dir, 'scat_parameters.mat'))
-            sparsityVector = [3, ones(1,K-1)];
-            matrixS = 1/3*ones(N,N,K) - repmat(eye(N), [1, 1, K]);
-            feedbackMatrix = matrixS(:,:,1);
-            for it = 2:K
-                
-                [shiftLeft] = shiftMatrixDistribute(feedbackMatrix, sparsityVector(it-1), 'pulseSize', pulseSize);
-                
-                G1 = diag(1.^shiftLeft);
-                R1 = matrixS(:,:,it) * G1;
-            
-                feedbackMatrix = shiftMatrix(feedbackMatrix, shiftLeft, 'left');
-                feedbackMatrix = matrixConvolution(R1, feedbackMatrix);
-               
-                pulseSize = pulseSize * N*sparsityVector(it-1);
+            A = double(expm(skew(A)));
+
+            % get filters
+            [attenuationSOS, equalizationSOS] = get_filters('TwoStage', m, octaveBand, fs, irLen, edc_est_path=edc_est_path );
+            zAbsorption = zSOS(attenuationSOS,'isDiagonal',true);
+
+            % apply tone corrector filter
+            C = zSOS(permute(equalizationSOS,[3 4 1 2]) .*  C);
+            if isTranspose
+               ir = dss2impzTransposed(...
+                irLen, m, A, B, C, D, 'absorptionFilters', zAbsorption);             
+            else 
+               ir = dss2impz(...
+                irLen, m, A, B, C, D, 'absorptionFilters', zAbsorption);
             end
-            Adl = size(feedbackMatrix, 3);
-            delayLeft = double(delayLeft);
-            delayRight = double(delayRight);
-            inputGain = randn(size(inputGain(:)));
-            outputGain = randn(size(outputGain(:)'));
-            outputGain = zSOS(permute(equalizationSOS,[3 4 1 2]) .*  outputGain);
-            zAbsorptionSCAT = zAbsorption;
-            feedbackMatrix = shiftMatrix(double(feedbackMatrix), delayLeft, 'left');
-            feedbackMatrix = shiftMatrix(feedbackMatrix, delayRight, 'right');
-            mainDelay = double(delays - delayLeft - delayRight);
-            matrixFilter = zFIR(double(feedbackMatrix));
-            ir.(type) = dss2impzTransposed(irLen, mainDelay, matrixFilter, inputGain, outputGain, zeros(1,1), 'absorptionFilters', zAbsorptionSCAT);
+        case 'SCAT'
+            load(fullfile(results_dir, 'scat_parameters.mat'))
+            Adl = size(feedbackMatrix, 3);  % delays introduced by the scattering feedback matrix
+            B = inputGain(:);   % input gains
+            C = outputGain(:)'; % output gains
+            D = zeros(1:1);     % direct gains
+
+            % get filters
+            [attenuationSOS, equalizationSOS] = get_filters('TwoStage', double(delays+Adl/2), octaveBand, fs, irLen, edc_est_path=edc_est_path);
+             zAbsorption = zSOS(attenuationSOS,'isDiagonal',true);
+
+            % apply tone corrector filter
+            C = zSOS(permute(equalizationSOS,[3 4 1 2]) .*  C);
+            % build scattering matrix 
+            A = shiftMatrix(double(feedbackMatrix), double(delayLeft), 'left');
+            A = shiftMatrix(A, double(delayRight), 'right');
+            m = double(delays - double(delayLeft) - double(delayRight));
+            A = zFIR(double(A));
+            if isTranspose
+                ir = dss2impzTransposed(...
+                    irLen, m, A, B, C, D, 'absorptionFilters', zAbsorption);
+            else
+                ir = dss2impz(...
+                    irLen, m, A, B, C, D, 'absorptionFilters', zAbsorption);
+            end
     end
-
-    % generate impulse response
-
     % save impulse response
-    name =  RIRfilename(iRIR) + "_" + type + "_est.wav";
+    name =  RIRfilenames(iRIR) + "_" + type + "_est.wav";
     filename = fullfile(output_dir,name);
-    % audiowrite(filename, ir.(type)/max(abs(ir.(type))),fs);
+    audiowrite(filename, ir, fs);
 end
 
-%% functions 
+%% AUXILIARY FUNCTIONS 
+
 function Y = skew(X)
+    % orthogonal mapping
     X = triu(X,1);
     Y = X - transpose(X);
 end
 
+function [filePaths, baseFilename] = getFilepaths(folder, extension)
+    % retrieves the full file paths of all files with a specified
+    % extension in a given folder.
+
+    % get a list of all .extension files in the folder
+    waveFiles = dir(fullfile(folder, "*."+ extension));
+
+    % initialize a cell array to store the full file paths
+    filePaths = cell(length(waveFiles), 1);
+    baseFilename = cell(length(waveFiles), 1);
+    % loop through the list of files to construct full file paths
+    for k = 1:length(waveFiles)
+        filePaths{k} = fullfile(folder, waveFiles(k).name);
+        baseFilename{k} =  waveFiles(k).name;
+    end
+
+    % convert cell array to a string array if needed
+    filePaths = string(filePaths);
+    baseFilename = string(baseFilename);
+end
