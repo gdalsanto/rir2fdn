@@ -4,3 +4,6 @@
 [submodule "informed/diff-fdn-colorless"]
 	path = informed/diff-fdn-colorless
 	url = git@github.com:gdalsanto/diff-fdn-colorless.git
+[submodule "blind/diff-delay-net"]
+	path = blind/diff-delay-net
+	url = git@github.com:gdalsanto/diff-delay-net.git
