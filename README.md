@@ -9,6 +9,7 @@ To do so, we use an informed method incorporating improved energy decay estimati
 This repository relies on 4 submodules:
 - [diff-fdn-colorless](https://github.com/gdalsanto/diff-fdn-colorless): optimization code to tune a set of FDN parameters (feedback matrix, input gains, and output gains) to achieve a smoother and less colored reverberation [1, 2]. 
 In the submitted paper we use the scattering feedback matrix (arg `--scattering`), 6 delay lines with lengths [593, 743, 929, 1153, 1399, 1699]. 
+    - [Two_stage_filter]()
     - [DecayFitNet](https://github.com/georg-goetz/DecayFitNet/tree/01daf3e7bbfd637aa1269bbca0cab7f445db0d5d): neural-network-based approach to estimate RIR decay parameters from energy decay curves (EDCs), which are modeled as a combination of multiple exponential decays, each characterized by an amplitude, decay time, and a noise term. We use these values to design the prototype attenuation and tone corrector filters.
     - [fdnToolbox](https://github.com/SebastianJiroSchlecht/fdnToolbox): Matlab toolbox for FDN, used to generate the impulse response at inference (by the `inference.m` script) from the estimated FDN parameters.
 - [diff-delay-net](https://github.com/gdalsanto/diff-delay-net): implementation of the differentiable delay network presented by S. Lee et al. in [3]. **Please note that this is not the official implementation.** 
@@ -19,8 +20,16 @@ When cloning this repository, make sure to clone all the submodules, by running
 ```
 git clone --recurse-submodules https://github.com/gdalsanto/rir2fdn
 ```
+<ins>FDN colorless optimization</ins>: to run colorless optimization run `./diff-fdn-colorless/solver.py`. The output parameters will be saved in .mat format. 
+
+<ins>Decay parameters estimation</ins>: run `./diff-fdn-colorless/rir_analysis.py` to run the energy decay analysis and the EDC parameters estimation of the RIR that you want to synthesize. This can be done already in the solver by setting the argument `--reference_ir`.
+
+<ins>RIR2FDN</ins>: run the `.inference.m` script to build an FDN with the optimized FDN parameters. The script uses the two-stage attenuation filter and a graphic equalizer for the tone correction filter from the pre-estimated EDC parameters. 
 
 
+In `./rir` you can already find a set of 7 rirs and their EDC parameters. These RIR were used for the paper to evaluate the presented model. 
+
+**Note**: as it is, this code doesn't take into account the early reflections and as such should be used to synthesize only the late reverberation part. 
 
 ## References
 Audio demos are published in: [RIR2FDN](http://research.spa.aalto.fi/publications/papers/dafx24-rir2fdn/).  
