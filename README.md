@@ -12,7 +12,7 @@ In the submitted paper we use the scattering feedback matrix (arg `--scattering`
     - [Two_stage_filter](https://github.com/gdalsanto/Two_stage_filter): two stage attenuation filter design by Vesa Välimäki et al. [3]
     - [DecayFitNet](https://github.com/georg-goetz/DecayFitNet/tree/01daf3e7bbfd637aa1269bbca0cab7f445db0d5d): neural-network-based approach to estimate RIR decay parameters from energy decay curves (EDCs), which are modeled as a combination of multiple exponential decays, each characterized by an amplitude, decay time, and a noise term. We use these values to design the prototype attenuation and tone corrector filters.
     - [fdnToolbox](https://github.com/SebastianJiroSchlecht/fdnToolbox): Matlab toolbox for FDN, used to generate the impulse response at inference (by the `inference.m` script) from the estimated FDN parameters.
-- [diff-delay-net](https://github.com/gdalsanto/diff-delay-net): implementation of the differentiable delay network presented by S. Lee et al. in [4]. **Please note that this is not the official implementation.** 
+- [diff-delay-net](https://github.com/gdalsanto/diff-delay-net): implementation of the baseline, i.e. the differentiable delay network presented by S. Lee et al. in [4]. **Please note that this is not the official implementation.** 
 
 
 ## Getting started 
