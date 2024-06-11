@@ -83,7 +83,7 @@ if strcmp(method, 'matlabGEQ') || strcmp(method, 'TwoStage')
         targetT60 = est.T;
         % pad RT values 
         if octaveBand == 1
-            targetT60 = [targetT60(1)*ones(1), targetT60, targetT60(end)*ones(1)];
+            targetT60 = [targetT60(1)*ones(1), targetT60]; 
         elseif octaveBand == 3
             targetT60 = [targetT60(1)*ones(1, 5), targetT60, targetT60(end)*ones(1)];
         end
@@ -92,13 +92,19 @@ if strcmp(method, 'matlabGEQ') || strcmp(method, 'TwoStage')
         attenuationSOS = zeros(length(delays), 1, nBands+1, 6);
         for i = 1:length(delays)
             [~, ~, ~, ~, iSOS] = twoFilters(targetT60, delays(i), fs, 'shelf', wc);
+            if ~all(iSOS(end,:))
+                % TODO Last row is all zero, this is a bug that needs to be fixed
+                iSOS(end,:) = [];
+            end
             attenuationSOS(i, 1, :, :) = iSOS;
         end
     end
     % Tone correction filter 
     if octaveBand == 1
-        targetLevel = [targetLevel(1)*ones(1), targetLevel, targetLevel(end)*ones(1)];
+        targetLevel = [targetLevel(1)*ones(1), targetLevel];
         [nums,dens, ~] = aceq(targetLevel, 0, fs);
+        nums(:, end) = [];
+        dens(:, end) = [];
     elseif octaveBand == 3
         targetLevel = [targetLevel(1)*ones(1, 5), targetLevel, targetLevel(end)*ones(1)];
         [nums,dens, ~] = acge3(targetLevel, 0, fs);
