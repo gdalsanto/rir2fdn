@@ -35,7 +35,7 @@ In `./rir` you can already find a set of 7 rirs and their EDC parameters. These 
 Audio demos are published in [RIR2FDN](http://research.spa.aalto.fi/publications/papers/dafx24-rir2fdn/).  
 The paper is not yet available, but you can check related work:
 ```
-[1] Dal Santo G., Prawda K., Schlecht S. J., and Välimäki V., "Feedback Delay Network Optimization." in EURASIP Journal on Audio, Speech, and Music Processing - sumbitted for reviews on 31.01.2024
+[1] Dal Santo G., Prawda K., Schlecht S. J., and Välimäki V., "Efficient Optimization of Feedback Delay Networks for Smooth Reverberation" in EURASIP Journal on Audio, Speech, and Music Processing - submitted for reviews on 31.01.2024
 [2] Dal Santo G., Prawda K., Schlecht S. J., and Välimäki V., "Differentiable Feedback Delay Network for colorless reverberation." in the 26th International Conference on Digital Audio Effects (DAFx23), Copenhagen, Denmark, Sept. 4-7 2023
 [3] Välimäki, V., Prawda, K., & Schlecht, S. J., "Two-stage attenuation filter for artificial reverberation." IEEE Signal Processing Letters, 2024
 [4] Lee, S., Choi, H. S., & Lee, K., "Differentiable artificial reverberation." in IEEE/ACM Transactions on Audio, Speech, and Language Processing, 30, 2541-2556, 2022.
