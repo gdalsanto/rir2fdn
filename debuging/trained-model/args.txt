@@ -1,0 +1,19 @@
+alpha,1.0
+batch_size,2000
+delays,[593.0, 743.0, 929.0, 1153.0, 1399.0, 1699.0]
+device,cuda
+edc_est_method,DecayFitNet
+gain_per_sample,0.9999
+householder,True
+log_epochs,False
+lr,0.0005
+max_epochs,25
+num,480000
+octave_bands,1
+reference_ir,None
+samplerate,48000
+scattering,True
+shuffle,True
+split,0.8
+train_dir,informed/output/20240301-170355
+transpose,True
